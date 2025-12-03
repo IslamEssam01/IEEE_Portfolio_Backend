@@ -6,6 +6,10 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,6 +21,9 @@ import {
   ApiInternalServerErrorResponse,
   ApiOperation,
   ApiNotFoundResponse,
+  ApiTags,
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
   create_user_swagger,
@@ -24,9 +31,14 @@ import {
   get_user_by_id_swagger,
   update_user_swagger,
   delete_user_swagger,
+  change_password_swagger,
 } from './users.swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
+@ApiTags('users')
 @Controller('users')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -38,8 +50,8 @@ export class UsersController {
   @ApiInternalServerErrorResponse(
     create_user_swagger.responses.internalServerError,
   )
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    return await this.usersService.create(createUserDto);
   }
 
   @Get()
@@ -48,8 +60,8 @@ export class UsersController {
   @ApiInternalServerErrorResponse(
     get_all_users_swagger.responses.internalServerError,
   )
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    return await this.usersService.findAll();
   }
 
   @Get(':id')
@@ -71,8 +83,8 @@ export class UsersController {
   @ApiInternalServerErrorResponse(
     update_user_swagger.responses.internalServerError,
   )
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return await this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
@@ -84,5 +96,23 @@ export class UsersController {
   )
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('change-password')
+  @ApiBearerAuth()
+  @ApiOperation(change_password_swagger.operation)
+  @ApiOkResponse(change_password_swagger.responses.success)
+  @ApiBadRequestResponse(change_password_swagger.responses.badRequest)
+  @ApiUnauthorizedResponse(change_password_swagger.responses.unauthorized)
+  @ApiInternalServerErrorResponse(
+    change_password_swagger.responses.internalServerError,
+  )
+  async changePassword(
+    @Req() req: { user: { id: string } },
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    const userId = (req?.user as { id: string }).id;
+    return await this.usersService.changePassword(userId, changePasswordDto);
   }
 }

@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { Role } from 'src/roles/entities/role.entity';
 import {
   Column,
@@ -21,6 +22,7 @@ export class User {
   email: string;
 
   @Column()
+  @Exclude()
   password: string;
 
   @ManyToOne(() => Role, (role) => role.users, { nullable: false })

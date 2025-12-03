@@ -43,7 +43,7 @@ export const create_user_swagger = {
       description: 'Invalid input or validation error',
       schema: {
         example: {
-          message: 'Email is required and must be valid',
+          message: `Password must include uppercase, lowercase, number, and special character`,
           error: 'Bad Request',
           statusCode: 400,
         },
@@ -223,6 +223,61 @@ export const delete_user_swagger = {
           message: ERROR_MESSAGES.USER_NOT_FOUND,
           error: 'Not Found',
           statusCode: 404,
+        },
+      },
+    },
+    internalServerError: {
+      description: 'Internal server error',
+      schema: {
+        example: {
+          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+          error: 'Internal Server Error',
+          statusCode: 500,
+        },
+      },
+    },
+  },
+};
+
+export const change_password_swagger = {
+  operation: {
+    summary: 'Change user password',
+    description:
+      'Change the password for the authenticated user. Requires old password verification.',
+  },
+
+  responses: {
+    success: {
+      description: 'Password changed successfully',
+      schema: {
+        example: {
+          data: {
+            ...user_example,
+            updated_at: '2025-12-03T15:45:00Z',
+          },
+          count: 1,
+          message: 'Password changed successfully',
+        },
+      },
+    },
+    badRequest: {
+      description: 'Invalid input or validation error',
+      schema: {
+        example: {
+          message:
+            'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character',
+          error: 'Bad Request',
+          statusCode: 400,
+        },
+      },
+    },
+    unauthorized: {
+      description: 'Invalid old password',
+      schema: {
+        example: {
+          message: ERROR_MESSAGES.WRONG_PASSWORD,
+          error: 'Unauthorized',
+          statusCode: 401,
         },
       },
     },
