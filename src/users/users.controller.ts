@@ -6,10 +6,9 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
-  Req,
   UseInterceptors,
   ClassSerializerInterceptor,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -22,19 +21,13 @@ import {
   ApiOperation,
   ApiNotFoundResponse,
   ApiTags,
-  ApiBearerAuth,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
   create_user_swagger,
-  get_all_users_swagger,
   get_user_by_id_swagger,
   update_user_swagger,
   delete_user_swagger,
-  change_password_swagger,
 } from './users.swagger';
-import { AuthGuard } from '@nestjs/passport';
-import { ChangePasswordDto } from './dto/change-password.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -54,16 +47,6 @@ export class UsersController {
     return await this.usersService.create(createUserDto);
   }
 
-  @Get()
-  @ApiOperation(get_all_users_swagger.operation)
-  @ApiOkResponse(get_all_users_swagger.responses.success)
-  @ApiInternalServerErrorResponse(
-    get_all_users_swagger.responses.internalServerError,
-  )
-  async findAll() {
-    return await this.usersService.findAll();
-  }
-
   @Get(':id')
   @ApiOperation(get_user_by_id_swagger.operation)
   @ApiOkResponse(get_user_by_id_swagger.responses.success)
@@ -71,7 +54,7 @@ export class UsersController {
   @ApiInternalServerErrorResponse(
     get_user_by_id_swagger.responses.internalServerError,
   )
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
@@ -83,7 +66,10 @@ export class UsersController {
   @ApiInternalServerErrorResponse(
     update_user_swagger.responses.internalServerError,
   )
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return await this.usersService.update(id, updateUserDto);
   }
 
@@ -94,25 +80,7 @@ export class UsersController {
   @ApiInternalServerErrorResponse(
     delete_user_swagger.responses.internalServerError,
   )
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Patch('change-password')
-  @ApiBearerAuth()
-  @ApiOperation(change_password_swagger.operation)
-  @ApiOkResponse(change_password_swagger.responses.success)
-  @ApiBadRequestResponse(change_password_swagger.responses.badRequest)
-  @ApiUnauthorizedResponse(change_password_swagger.responses.unauthorized)
-  @ApiInternalServerErrorResponse(
-    change_password_swagger.responses.internalServerError,
-  )
-  async changePassword(
-    @Req() req: { user: { id: string } },
-    @Body() changePasswordDto: ChangePasswordDto,
-  ) {
-    const userId = (req?.user as { id: string }).id;
-    return await this.usersService.changePassword(userId, changePasswordDto);
   }
 }

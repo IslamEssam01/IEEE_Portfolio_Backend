@@ -8,13 +8,20 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum RoleName {
+  SUPER_ADMIN = 'Super Admin',
+  ADMIN = 'Admin',
+  FACULTY_MEMBER = 'Faculty Member',
+  VISITOR = 'Visitor',
+}
+
 @Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
-  name: string;
+  @Column({ unique: true, type: 'enum', enum: RoleName })
+  name: RoleName;
 
   @Column({ nullable: true })
   description: string;

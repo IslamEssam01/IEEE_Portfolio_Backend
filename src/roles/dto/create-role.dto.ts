@@ -1,19 +1,25 @@
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+  IsEnum,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { STRING_MAX_LENGTH } from 'src/constants/variables';
+import { RoleName } from '../entities/role.entity';
 
 export class CreateRoleDto {
   @ApiProperty({
     description: 'Name of the role',
-    example: 'Admin',
-    minLength: 2,
-    maxLength: STRING_MAX_LENGTH,
+    example: RoleName.ADMIN,
+    enum: RoleName,
+  })
+  @IsEnum(RoleName, {
+    message: `Role name must be one of the following: ${Object.values(RoleName).join(', ')}`,
   })
   @IsNotEmpty()
-  @IsString()
-  @MinLength(2)
-  @MaxLength(STRING_MAX_LENGTH)
-  name: string;
+  name: RoleName;
 
   @ApiProperty({
     description: 'Description of the role and its permissions',
