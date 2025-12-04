@@ -26,7 +26,10 @@ export const ERROR_MESSAGES = {
 
     // user
     USER_NOT_FOUND: 'User not found',
+    FORBIDDEN_ACTION: 'You do not have permission to perform this action',
 
+    // role
+    ROLE_NOT_FOUND: 'Role not found',
     // communication
     FAILED_TO_SEND_OTP_EMAIL: 'Failed to send OTP email',
     OTP_REQUEST_WAIT: 'Please wait a minute before requesting a new code',

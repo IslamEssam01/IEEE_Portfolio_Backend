@@ -25,6 +25,7 @@ import {
 import {
   ApiBadRequestErrorResponse,
   ApiConflictErrorResponse,
+  ApiForbiddenErrorResponse,
   ApiInternalServerError,
   ApiNotFoundErrorResponse,
   ApiUnauthorizedErrorResponse,
@@ -55,19 +56,27 @@ export class UsersController {
   @ApiCreatedResponse(create_user_swagger.responses.success)
   @ApiBadRequestErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
   @ApiConflictErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
+  @ApiNotFoundErrorResponse(ERROR_MESSAGES.ROLE_NOT_FOUND)
   @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
   @ResponseMessage(SUCCESS_MESSAGES.USER_REGISTERED)
   async create(@Body() createUserDto: CreateUserDto) {
     return await this.usersService.create(createUserDto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
+  @ApiBearerAuth()
   @ApiOperation(get_user_by_id_swagger.operation)
   @ApiOkResponse(get_user_by_id_swagger.responses.success)
+  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ApiForbiddenErrorResponse(ERROR_MESSAGES.FORBIDDEN_ACTION)
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.findOne(id);
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request & { user: User },
+  ) {
+    return this.usersService.findOne(id, req.user);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -76,6 +85,7 @@ export class UsersController {
   @ApiOperation(update_user_swagger.operation)
   @ApiOkResponse(update_user_swagger.responses.success)
   @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ApiForbiddenErrorResponse(ERROR_MESSAGES.FORBIDDEN_ACTION)
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
   @ResponseMessage(SUCCESS_MESSAGES.USER_UPDATED)
@@ -93,6 +103,7 @@ export class UsersController {
   @ApiOperation(delete_user_swagger.operation)
   @ApiOkResponse(delete_user_swagger.responses.success)
   @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ApiForbiddenErrorResponse(ERROR_MESSAGES.FORBIDDEN_ACTION)
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
   @ResponseMessage(SUCCESS_MESSAGES.ACCOUNT_REMOVED)

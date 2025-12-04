@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RolesService } from 'src/roles/roles.service';
+import { RoleName } from 'src/roles/entities/role.entity';
 import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UsersService {
@@ -18,19 +19,33 @@ export class UsersService {
     private readonly rolesService: RolesService,
   ) {}
   async create(createUserDto: CreateUserDto) {
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
+    const { role: roleName, ...userData } = createUserDto;
 
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(userData.password, salt);
+
+    const roleEntity = await this.rolesService.findByName(roleName);
+
+    if (!roleEntity) {
+      throw new NotFoundException(`Role '${roleName}' not found.`);
+    }
     const newUser = this.usersRepository.create({
-      ...createUserDto,
+      ...userData,
       password: hashedPassword,
-      role: { id: (await this.rolesService.findByName(createUserDto.role)).id },
+      role_id: roleEntity.id,
     });
 
     return this.usersRepository.save(newUser);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUser: User) {
+    if (
+      currentUser.id !== id &&
+      currentUser.role.name !== RoleName.SUPER_ADMIN &&
+      currentUser.role.name !== RoleName.ADMIN
+    ) {
+      throw new ForbiddenException('Forbidden Action');
+    }
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['role'],
@@ -43,12 +58,16 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, currentUser: User) {
-    if (currentUser.id !== id) {
+    if (
+      currentUser.id !== id &&
+      currentUser.role.name !== RoleName.SUPER_ADMIN &&
+      currentUser.role.name !== RoleName.ADMIN
+    ) {
       throw new ForbiddenException('Forbidden Action');
     }
     const user = await this.usersRepository.preload({
-      id: id,
       ...updateUserDto,
+      id: id,
     });
 
     if (!user) {
@@ -59,7 +78,11 @@ export class UsersService {
   }
 
   async remove(id: string, currentUser: User) {
-    if (currentUser.id !== id) {
+    if (
+      currentUser.id !== id &&
+      currentUser.role.name !== RoleName.SUPER_ADMIN &&
+      currentUser.role.name !== RoleName.ADMIN
+    ) {
       throw new ForbiddenException('Forbidden Action');
     }
     const result = await this.usersRepository.delete(id);
