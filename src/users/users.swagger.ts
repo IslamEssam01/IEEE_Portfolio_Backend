@@ -1,7 +1,4 @@
-import {
-  SUCCESS_MESSAGES,
-  ERROR_MESSAGES,
-} from '../constants/swagger-messages';
+import { SUCCESS_MESSAGES } from '../constants/swagger-messages';
 
 const user_example = {
   id: 'd102dadc-0b17-4e83-812b-00103b606a1f',
@@ -39,66 +36,6 @@ export const create_user_swagger = {
         },
       },
     },
-    badRequest: {
-      description: 'Invalid input or validation error',
-      schema: {
-        example: {
-          message: `Password must include uppercase, lowercase, number, and special character`,
-          error: 'Bad Request',
-          statusCode: 400,
-        },
-      },
-    },
-    conflict: {
-      description: 'Email already exists',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.EMAIL_ALREADY_EXISTS,
-          error: 'Conflict',
-          statusCode: 409,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
-        },
-      },
-    },
-  },
-};
-
-export const get_all_users_swagger = {
-  operation: {
-    summary: 'Get all users',
-    description: 'Retrieve a paginated list of all users in the system.',
-  },
-
-  responses: {
-    success: {
-      description: 'Users retrieved successfully',
-      schema: {
-        example: {
-          data: [user_example],
-          count: 1,
-          message: 'Users retrieved successfully',
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
-        },
-      },
-    },
   },
 };
 
@@ -118,26 +55,6 @@ export const get_user_by_id_swagger = {
           },
           count: 1,
           message: 'User retrieved successfully',
-        },
-      },
-    },
-    notFound: {
-      description: 'User not found',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.USER_NOT_FOUND,
-          error: 'Not Found',
-          statusCode: 404,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
         },
       },
     },
@@ -164,36 +81,6 @@ export const update_user_swagger = {
         },
       },
     },
-    badRequest: {
-      description: 'Invalid input or validation error',
-      schema: {
-        example: {
-          message: 'Invalid input data',
-          error: 'Bad Request',
-          statusCode: 400,
-        },
-      },
-    },
-    notFound: {
-      description: 'User not found',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.USER_NOT_FOUND,
-          error: 'Not Found',
-          statusCode: 404,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
-        },
-      },
-    },
   },
 };
 
@@ -213,26 +100,6 @@ export const delete_user_swagger = {
           },
           count: 1,
           message: 'User deleted successfully',
-        },
-      },
-    },
-    notFound: {
-      description: 'User not found',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.USER_NOT_FOUND,
-          error: 'Not Found',
-          statusCode: 404,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
         },
       },
     },

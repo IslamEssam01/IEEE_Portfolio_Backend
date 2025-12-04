@@ -9,25 +9,40 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   ParseUUIDPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
+  ApiCreatedResponse,
   ApiOkResponse,
-  ApiBadRequestResponse,
-  ApiConflictResponse,
-  ApiInternalServerErrorResponse,
   ApiOperation,
-  ApiNotFoundResponse,
   ApiTags,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import {
+  ApiBadRequestErrorResponse,
+  ApiConflictErrorResponse,
+  ApiInternalServerError,
+  ApiNotFoundErrorResponse,
+  ApiUnauthorizedErrorResponse,
+} from 'src/decorators/swagger-error-responses.decorator';
+import {
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+} from 'src/constants/swagger-messages';
 import {
   create_user_swagger,
   get_user_by_id_swagger,
   update_user_swagger,
   delete_user_swagger,
 } from './users.swagger';
+import { ResponseMessage } from 'src/decorators/response-message.decorator';
+import type { Request } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { User } from './entities/user.entity';
 
 @ApiTags('users')
 @Controller('users')
@@ -37,12 +52,11 @@ export class UsersController {
 
   @Post()
   @ApiOperation(create_user_swagger.operation)
-  @ApiOkResponse(create_user_swagger.responses.success)
-  @ApiBadRequestResponse(create_user_swagger.responses.badRequest)
-  @ApiConflictResponse(create_user_swagger.responses.conflict)
-  @ApiInternalServerErrorResponse(
-    create_user_swagger.responses.internalServerError,
-  )
+  @ApiCreatedResponse(create_user_swagger.responses.success)
+  @ApiBadRequestErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
+  @ApiConflictErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
+  @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
+  @ResponseMessage(SUCCESS_MESSAGES.USER_REGISTERED)
   async create(@Body() createUserDto: CreateUserDto) {
     return await this.usersService.create(createUserDto);
   }
@@ -50,37 +64,42 @@ export class UsersController {
   @Get(':id')
   @ApiOperation(get_user_by_id_swagger.operation)
   @ApiOkResponse(get_user_by_id_swagger.responses.success)
-  @ApiNotFoundResponse(get_user_by_id_swagger.responses.notFound)
-  @ApiInternalServerErrorResponse(
-    get_user_by_id_swagger.responses.internalServerError,
-  )
+  @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
+  @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
+  @ApiBearerAuth()
   @ApiOperation(update_user_swagger.operation)
   @ApiOkResponse(update_user_swagger.responses.success)
-  @ApiBadRequestResponse(update_user_swagger.responses.badRequest)
-  @ApiNotFoundResponse(update_user_swagger.responses.notFound)
-  @ApiInternalServerErrorResponse(
-    update_user_swagger.responses.internalServerError,
-  )
+  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
+  @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
+  @ResponseMessage(SUCCESS_MESSAGES.USER_UPDATED)
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Req() req: Request & { user: User },
   ) {
-    return await this.usersService.update(id, updateUserDto);
+    return await this.usersService.update(id, updateUserDto, req.user);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
+  @ApiBearerAuth()
   @ApiOperation(delete_user_swagger.operation)
   @ApiOkResponse(delete_user_swagger.responses.success)
-  @ApiNotFoundResponse(delete_user_swagger.responses.notFound)
-  @ApiInternalServerErrorResponse(
-    delete_user_swagger.responses.internalServerError,
-  )
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.remove(id);
+  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
+  @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
+  @ResponseMessage(SUCCESS_MESSAGES.ACCOUNT_REMOVED)
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request & { user: User },
+  ) {
+    return this.usersService.remove(id, req.user);
   }
 }

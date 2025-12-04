@@ -64,9 +64,10 @@ export const SUCCESS_MESSAGES = {
     EMAIL_UPDATE_INITIATED: 'Email update process initiated. Check your new email for verification',
     EMAIL_UPDATED: 'Email updated successfully',
     PASSWORD_CONFIRMED: 'Password confirmed successfully',
-
+    USER_UPDATED: 'User Data Updated Succesfully',
     // OAuth completion
     BIRTH_DATE_SET: 'Birth date set successfully',
     OAUTH_USER_REGISTERED: 'OAuth user registered successfully',
     TOKEN_EXCHANGE_SUCCESS: 'Token exchanged successfully',
+
 } as const;

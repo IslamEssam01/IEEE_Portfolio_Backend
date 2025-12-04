@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Repository } from 'typeorm';
@@ -38,24 +42,30 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto, currentUser: User) {
+    if (currentUser.id !== id) {
+      throw new ForbiddenException('Forbidden Action');
+    }
     const user = await this.usersRepository.preload({
       id: id,
       ...updateUserDto,
     });
 
     if (!user) {
-      throw new NotFoundException(`User #${id} not found`);
+      throw new NotFoundException(`User ${id} not found`);
     }
 
     return this.usersRepository.save(user);
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUser: User) {
+    if (currentUser.id !== id) {
+      throw new ForbiddenException('Forbidden Action');
+    }
     const result = await this.usersRepository.delete(id);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`User #${id} not found`);
+      throw new NotFoundException(`User ${id} not found`);
     }
 
     return { message: 'User deleted successfully' };
