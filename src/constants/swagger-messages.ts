@@ -30,6 +30,8 @@ export const ERROR_MESSAGES = {
 
     // role
     ROLE_NOT_FOUND: 'Role not found',
+    ROLE_ALREADY_EXISTS: 'Role name already exists',
+    
     // communication
     FAILED_TO_SEND_OTP_EMAIL: 'Failed to send OTP email',
     OTP_REQUEST_WAIT: 'Please wait a minute before requesting a new code',
@@ -72,5 +74,9 @@ export const SUCCESS_MESSAGES = {
     BIRTH_DATE_SET: 'Birth date set successfully',
     OAUTH_USER_REGISTERED: 'OAuth user registered successfully',
     TOKEN_EXCHANGE_SUCCESS: 'Token exchanged successfully',
+    // roles
+    ROLE_CREATED: 'Role created successfully',
+    ROLE_UPDATED: 'Role updated successfully',
+    ROLE_DELETED: 'Role deleted successfully',
 
 } as const;

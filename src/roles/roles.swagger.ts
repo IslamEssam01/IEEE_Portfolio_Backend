@@ -1,5 +1,3 @@
-import { ERROR_MESSAGES } from '../constants/swagger-messages';
-
 const role_example = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   name: 'Admin',
@@ -28,36 +26,6 @@ export const create_role_swagger = {
         },
       },
     },
-    badRequest: {
-      description: 'Invalid input or validation error',
-      schema: {
-        example: {
-          message: 'Name is required and must be at least 2 characters',
-          error: 'Bad Request',
-          statusCode: 400,
-        },
-      },
-    },
-    conflict: {
-      description: 'Role name already exists',
-      schema: {
-        example: {
-          message: 'Role name already exists',
-          error: 'Conflict',
-          statusCode: 409,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
-        },
-      },
-    },
   },
 };
 
@@ -75,16 +43,6 @@ export const get_all_roles_swagger = {
           data: [role_example],
           count: 1,
           message: 'Roles retrieved successfully',
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
         },
       },
     },
@@ -107,68 +65,6 @@ export const get_role_by_id_swagger = {
           },
           count: 1,
           message: 'Role retrieved successfully',
-        },
-      },
-    },
-    notFound: {
-      description: 'Role not found',
-      schema: {
-        example: {
-          message: 'Role not found',
-          error: 'Not Found',
-          statusCode: 404,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
-        },
-      },
-    },
-  },
-};
-
-export const get_role_by_name_swagger = {
-  operation: {
-    summary: 'Get role by name',
-    description: 'Retrieve a specific role by its name.',
-  },
-
-  responses: {
-    success: {
-      description: 'Role retrieved successfully',
-      schema: {
-        example: {
-          data: {
-            ...role_example,
-          },
-          count: 1,
-          message: 'Role retrieved successfully',
-        },
-      },
-    },
-    notFound: {
-      description: 'Role not found',
-      schema: {
-        example: {
-          message: 'Role not found',
-          error: 'Not Found',
-          statusCode: 404,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
         },
       },
     },
@@ -195,36 +91,6 @@ export const update_role_swagger = {
         },
       },
     },
-    badRequest: {
-      description: 'Invalid input or validation error',
-      schema: {
-        example: {
-          message: 'Invalid input data',
-          error: 'Bad Request',
-          statusCode: 400,
-        },
-      },
-    },
-    notFound: {
-      description: 'Role not found',
-      schema: {
-        example: {
-          message: 'Role not found',
-          error: 'Not Found',
-          statusCode: 404,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
-        },
-      },
-    },
   },
 };
 
@@ -242,26 +108,6 @@ export const delete_role_swagger = {
           data: {},
           count: 1,
           message: 'Role deleted successfully',
-        },
-      },
-    },
-    notFound: {
-      description: 'Role not found',
-      schema: {
-        example: {
-          message: 'Role not found',
-          error: 'Not Found',
-          statusCode: 404,
-        },
-      },
-    },
-    internalServerError: {
-      description: 'Internal server error',
-      schema: {
-        example: {
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-          error: 'Internal Server Error',
-          statusCode: 500,
         },
       },
     },
