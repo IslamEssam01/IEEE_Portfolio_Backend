@@ -88,3 +88,41 @@ export const logout_swagger = {
     },
   },
 };
+
+export const generate_otp_swagger = {
+  operation: {
+    summary: 'Generate OTP',
+    description: 'Generate and send OTP code to user email for verification.',
+  },
+  responses: {
+    success: {
+      description: 'OTP generated and sent successfully',
+      schema: {
+        example: {
+          data: {},
+          count: 0,
+          message: SUCCESS_MESSAGES.OTP_GENERATED,
+        },
+      },
+    },
+  },
+};
+
+export const verify_otp_swagger = {
+  operation: {
+    summary: 'Verify OTP',
+    description: 'Verify OTP code for email verification or password reset.',
+  },
+  responses: {
+    success: {
+      description: 'OTP verified successfully',
+      schema: {
+        example: {
+          data: {},
+          count: 0,
+          message: SUCCESS_MESSAGES.OTP_VERIFIED,
+        },
+      },
+    },
+  },
+};

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { LoginDTO, RegisterDTO } from './dto';
 import { User } from './interfaces/user.interface';
+import { OtpRecord } from './interfaces/otpRecord.interface';
 import { ERROR_MESSAGES } from 'src/constants/swagger-messages';
 import * as bcrypt from 'bcrypt';
 import { StringValue } from 'ms';
@@ -25,6 +26,18 @@ export class AuthService {
 
   // Dev-only in-memory user store. Replace with a real repository when DB entities are available.
   private users: User[] = [];
+
+  // OTP Records Storage for now till we implement Redis
+  otpRecords: OtpRecord[] = [];
+
+  // Private Helper Method to generate OTP
+  private generateNumericOtp(length: number = 6): string {
+    // Generates a string like "123456"
+    return crypto
+      .randomInt(0, Math.pow(10, length))
+      .toString()
+      .padStart(length, '0');
+  }
 
   async generateTokens(user_id: string) {
     const access_token = this.jwt_service.sign(
@@ -153,6 +166,70 @@ export class AuthService {
   async logout() {
     // TODO: When we add Redis, delete the refresh token for this userId here.
     // await this.redis_service.del(`refresh_token:${userId}`);
+
+    return { success: true };
+  }
+
+  async generateOtp(email: string): Promise<{ success: boolean }> {
+    // Check if user exists by email
+    const user = this.users.find((u) => u.email === email);
+    if (!user) {
+      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const otp = this.generateNumericOtp(6);
+
+    const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? 10);
+    const otpHash = await bcrypt.hash(otp, saltRounds);
+
+    const expiresAt = Date.now() + 10 * 60 * 1000;
+
+    const otpRecord: OtpRecord = {
+      userId: user.id,
+      otpHash: otpHash,
+      expiresAt: expiresAt,
+    };
+
+    // Remove any existing OTP for this user
+    this.otpRecords = this.otpRecords.filter((r) => r.userId !== user.id);
+
+    // Add new OTP record
+    this.otpRecords.push(otpRecord);
+
+    // TODO: nodemailer service so that we can send OTP emails
+    // For now, just a console log
+    console.log(`[DEV] OTP for ${email}: ${otp} (Expires in 10 minutes)`);
+
+    return { success: true };
+  }
+
+  async verifyOtp(email: string, otp: string): Promise<{ success: boolean }> {
+    const user = this.users.find((u) => u.email === email);
+    if (!user) {
+      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const otpRecord = this.otpRecords.find((r) => r.userId === user.id);
+    if (!otpRecord) {
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    if (Date.now() > otpRecord.expiresAt) {
+      this.otpRecords = this.otpRecords.filter((r) => r.userId !== user.id);
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    const isOtpValid = await bcrypt.compare(otp, otpRecord.otpHash);
+    if (!isOtpValid) {
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    this.otpRecords = this.otpRecords.filter((r) => r.userId !== user.id);
+
+    // TODO: Mark user email as verified in the database or generate password reset token
+    user.isEmailVerified = true; // for the in-memory store logic for now
+
+    // For now, just return success
 
     return { success: true };
   }

@@ -42,8 +42,10 @@ import {
   login_swagger,
   logout_swagger,
   register_swagger,
+  generate_otp_swagger,
+  verify_otp_swagger,
 } from './auth.swagger';
-import { LoginDTO, RegisterDTO } from './dto';
+import { LoginDTO, RegisterDTO, GenerateOtpDTO, VerifyOtpDTO } from './dto';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
 import { register } from 'module';
 
@@ -111,6 +113,29 @@ export class AuthController {
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
     });
 
+    return {};
+  }
+
+  @ApiOperation(generate_otp_swagger.operation)
+  @ApiBody({ type: GenerateOtpDTO })
+  @ApiOkResponse(generate_otp_swagger.responses.success)
+  @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
+  @ResponseMessage(SUCCESS_MESSAGES.OTP_GENERATED)
+  @Post('otp/generate')
+  async generateOtp(@Body() generate_otp_dto: GenerateOtpDTO) {
+    await this.auth_service.generateOtp(generate_otp_dto.email);
+    return {};
+  }
+
+  @ApiOperation(verify_otp_swagger.operation)
+  @ApiBody({ type: VerifyOtpDTO })
+  @ApiOkResponse(verify_otp_swagger.responses.success)
+  @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
+  @ApiBadRequestErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ResponseMessage(SUCCESS_MESSAGES.OTP_VERIFIED)
+  @Post('otp/verify')
+  async verifyOtp(@Body() verify_otp_dto: VerifyOtpDTO) {
+    await this.auth_service.verifyOtp(verify_otp_dto.email, verify_otp_dto.otp);
     return {};
   }
 }
