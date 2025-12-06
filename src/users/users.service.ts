@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -95,13 +97,24 @@ export class UsersService {
   }
 
   async validateUserPassword(userId: string, password: string) {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.id = :id', { id: userId })
+      .getOne();
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    if (!user.password) {
+      throw new BadRequestException(
+        'User logged in via OAuth2, no password set',
+      );
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new NotFoundException('Invalid password');
+      throw new UnauthorizedException('Invalid password');
     }
     return user;
   }
