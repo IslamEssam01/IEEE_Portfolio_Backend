@@ -38,7 +38,11 @@ import {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
 } from 'src/constants/swagger-messages';
-import { login_swagger, register_swagger } from './auth.swagger';
+import {
+  login_swagger,
+  logout_swagger,
+  register_swagger,
+} from './auth.swagger';
 import { LoginDTO, RegisterDTO } from './dto';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
 import { register } from 'module';
@@ -91,5 +95,22 @@ export class AuthController {
   async register(@Body() register_dto: RegisterDTO) {
     const user = await this.auth_service.register(register_dto);
     return { user };
+  }
+
+  @ApiOperation(logout_swagger.operation)
+  @ApiOkResponse(logout_swagger.responses.success)
+  @ResponseMessage(SUCCESS_MESSAGES.LOGGED_OUT)
+  @Post('logout')
+  async logout(@Res({ passthrough: true }) response: Response) {
+    await this.auth_service.logout();
+
+    // Clear the refresh_token cookie
+    response.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
+    });
+
+    return {};
   }
 }

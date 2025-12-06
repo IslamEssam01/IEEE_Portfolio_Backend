@@ -149,6 +149,13 @@ export class AuthService {
 
     return instanceToPlain(newUser);
   }
+
+  async logout() {
+    // TODO: When we add Redis, delete the refresh token for this userId here.
+    // await this.redis_service.del(`refresh_token:${userId}`);
+
+    return { success: true };
+  }
 }
 function instanceToPlain(user: any) {
   if (!user) return user;

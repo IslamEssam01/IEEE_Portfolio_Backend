@@ -69,3 +69,22 @@ export const register_swagger = {
     },
   },
 };
+
+export const logout_swagger = {
+  operation: {
+    summary: 'User logout',
+    description: 'Logout user and clear refresh token cookie.',
+  },
+  responses: {
+    success: {
+      description: 'Logout successful',
+      schema: {
+        example: {
+          data: {},
+          count: 0,
+          message: SUCCESS_MESSAGES.LOGGED_OUT,
+        },
+      },
+    },
+  },
+};
