@@ -38,9 +38,10 @@ import {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
 } from 'src/constants/swagger-messages';
-import { login_swagger } from './auth.swagger';
+import { login_swagger, register_swagger } from './auth.swagger';
 import { LoginDTO, RegisterDTO } from './dto';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
+import { register } from 'module';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -77,10 +78,14 @@ export class AuthController {
     return { access_token, user };
   }
 
+  // Swagger Meassages Updated
+  @ApiOperation(register_swagger.operation)
   @ApiBody({ type: RegisterDTO })
-  @ApiCreatedResponse({ description: 'User registered successfully' })
-  @ApiBadRequestErrorResponse(ERROR_MESSAGES.PASSWORD_CONFIRMATION_MISMATCH)
+  @ApiOkResponse(register_swagger.responses.success)
   @ApiConflictErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
+  @ApiConflictErrorResponse(ERROR_MESSAGES.USERNAME_ALREADY_TAKEN)
+  @ApiBadRequestErrorResponse(ERROR_MESSAGES.PASSWORD_CONFIRMATION_MISMATCH)
+  @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
   @ResponseMessage(SUCCESS_MESSAGES.USER_REGISTERED)
   @Post('register')
   async register(@Body() register_dto: RegisterDTO) {
