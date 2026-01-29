@@ -7,25 +7,22 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { LoginDTO, RegisterDTO } from './dto';
-import { User } from './interfaces/user.interface';
 import { OtpRecord } from './interfaces/otpRecord.interface';
 import { ERROR_MESSAGES } from 'src/constants/swagger-messages';
 import * as bcrypt from 'bcrypt';
 import { StringValue } from 'ms';
 import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
+import { UsersRepository } from 'src/users/users.repository';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    // TODO:
-    // private readonly user_repository: UserRepository,
+    private readonly user_repository: UsersRepository,
     private readonly jwt_service: JwtService,
     // private readonly redis_service: RedisService,
   ) {}
-
-  // Dev-only in-memory user store. Replace with a real repository when DB entities are available.
-  private users: User[] = [];
 
   // OTP Records Storage for now till we implement Redis
   otpRecords: OtpRecord[] = [];
@@ -65,10 +62,7 @@ export class AuthService {
   }
 
   async validateUserPassword(id: string, password: string): Promise<User> {
-    // Promise<User> { --> DON'T FORGET TO CHANGE IT
-    // TODO: make user repository and user entity
-    const user = this.users.find((u) => u.id === id) ?? null;
-    // const user = await this.user_repository.findById(id);
+    const user = await this.user_repository.findById(id);
 
     if (!user) {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
@@ -91,10 +85,10 @@ export class AuthService {
 
     if (identifier.includes('@')) {
       identifier_type = 'email';
-      user = this.users.find((u) => u.email === identifier) ?? null;
+      user = await this.user_repository.findByEmail(identifier);
     } else {
       identifier_type = 'username';
-      user = this.users.find((u) => u.username === identifier) ?? null;
+      user = await this.user_repository.findByUsername(identifier);
     }
 
     if (!user) {
@@ -119,7 +113,7 @@ export class AuthService {
     const { access_token, refresh_token } = await this.generateTokens(user_id);
 
     return {
-      user: instanceToPlain(user),
+      user: user,
       access_token: access_token,
       refresh_token: refresh_token,
     };
@@ -134,33 +128,28 @@ export class AuthService {
       );
     }
 
-    // uniqueness checks against in-memory store (dev-only)
-    const emailExists = this.users.some((u) => u.email === email);
+    const emailExists = await this.user_repository.findByEmail(email);
     if (emailExists) {
       throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
     }
 
-    const usernameExists = this.users.some((u) => u.username === username);
+    const usernameExists = await this.user_repository.findByUsername(username);
     if (usernameExists) {
       throw new BadRequestException(ERROR_MESSAGES.USERNAME_ALREADY_TAKEN);
     }
 
-    // hash password
     const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? 10);
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const newUser: User = {
-      id: crypto.randomUUID(),
+    const newUser = await this.user_repository.create({
       email,
       username,
       password: passwordHash,
-      isEmailVerified: false,
-      createdAt: new Date().toISOString(),
-    };
+      verified_email: false,
+      // Add other required fields with defaults as needed
+    });
 
-    this.users.push(newUser);
-
-    return instanceToPlain(newUser);
+    return newUser;
   }
 
   async logout() {
@@ -171,8 +160,7 @@ export class AuthService {
   }
 
   async generateOtp(email: string): Promise<{ success: boolean }> {
-    // Check if user exists by email
-    const user = this.users.find((u) => u.email === email);
+    const user = await this.user_repository.findByEmail(email);
     if (!user) {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
@@ -204,7 +192,7 @@ export class AuthService {
   }
 
   async verifyOtp(email: string, otp: string): Promise<{ success: boolean }> {
-    const user = this.users.find((u) => u.email === email);
+    const user = await this.user_repository.findByEmail(email);
     if (!user) {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
@@ -226,17 +214,8 @@ export class AuthService {
 
     this.otpRecords = this.otpRecords.filter((r) => r.userId !== user.id);
 
-    // TODO: Mark user email as verified in the database or generate password reset token
-    user.isEmailVerified = true; // for the in-memory store logic for now
-
-    // For now, just return success
+    await this.user_repository.update(user.id, { verified_email: true });
 
     return { success: true };
   }
-}
-function instanceToPlain(user: any) {
-  if (!user) return user;
-  const copy = { ...user };
-  if (copy.password) delete copy.password;
-  return copy;
 }

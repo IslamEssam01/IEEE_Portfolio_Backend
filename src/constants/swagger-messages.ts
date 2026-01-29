@@ -40,6 +40,7 @@ export const ERROR_MESSAGES = {
     FAILED_TO_SAVE_IN_DB: 'Failed to save the data to database',
     FAILED_TO_UPDATE_IN_DB: 'Failed to update the data in database',
     FAILED_TO_FETCH_FROM_DB: 'Failed to fetch data from database',
+    FAILED_TO_DELETE_FROM_DB: 'Failed to delete data from database',
 
     // links & Tokens
     INVALID_OR_EXPIRED_TOKEN: 'Invalid or expired token',

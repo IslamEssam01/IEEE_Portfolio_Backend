@@ -51,17 +51,17 @@ import { User } from './entities/user.entity';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  @ApiOperation(create_user_swagger.operation)
-  @ApiCreatedResponse(create_user_swagger.responses.success)
-  @ApiBadRequestErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
-  @ApiConflictErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
-  @ApiNotFoundErrorResponse(ERROR_MESSAGES.ROLE_NOT_FOUND)
-  @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
-  @ResponseMessage(SUCCESS_MESSAGES.USER_REGISTERED)
-  async create(@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto);
-  }
+  // @Post()
+  // @ApiOperation(create_user_swagger.operation)
+  // @ApiCreatedResponse(create_user_swagger.responses.success)
+  // @ApiBadRequestErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
+  // @ApiConflictErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
+  // @ApiNotFoundErrorResponse(ERROR_MESSAGES.ROLE_NOT_FOUND)
+  // @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
+  // @ResponseMessage(SUCCESS_MESSAGES.USER_REGISTERED)
+  // async create(@Body() createUserDto: CreateUserDto) {
+  //   return await this.usersService.create(createUserDto);
+  // }
 
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
