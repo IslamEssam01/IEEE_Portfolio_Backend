@@ -19,9 +19,12 @@ export class User {
   name: string;
 
   @Column({ unique: true })
+  username: string;
+
+  @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true, select: false })
+  @Column({ nullable: true, select: false }) // could be null for OAuth users
   @Exclude()
   password: string;
 

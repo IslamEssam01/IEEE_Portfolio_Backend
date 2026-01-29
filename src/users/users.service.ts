@@ -20,25 +20,26 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
     private readonly rolesService: RolesService,
   ) {}
-  async create(createUserDto: CreateUserDto) {
-    const { role: roleName, ...userData } = createUserDto;
 
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(userData.password, salt);
+  // async create(createUserDto: CreateUserDto) {
+  //   const { role: roleName, ...userData } = createUserDto;
 
-    const roleEntity = await this.rolesService.findByName(roleName);
+  //   const salt = await bcrypt.genSalt();
+  //   const hashedPassword = await bcrypt.hash(userData.password, salt);
 
-    if (!roleEntity) {
-      throw new NotFoundException(`Role '${roleName}' not found.`);
-    }
-    const newUser = this.usersRepository.create({
-      ...userData,
-      password: hashedPassword,
-      role_id: roleEntity.id,
-    });
+  //   const roleEntity = await this.rolesService.findByName(roleName);
 
-    return this.usersRepository.save(newUser);
-  }
+  //   if (!roleEntity) {
+  //     throw new NotFoundException(`Role '${roleName}' not found.`);
+  //   }
+  //   const newUser = this.usersRepository.create({
+  //     ...userData,
+  //     password: hashedPassword,
+  //     role_id: roleEntity.id,
+  //   });
+
+  //   return this.usersRepository.save(newUser);
+  // }
 
   async findOne(id: string, currentUser: User) {
     if (
@@ -96,26 +97,26 @@ export class UsersService {
     return { message: 'User deleted successfully' };
   }
 
-  async validateUserPassword(userId: string, password: string) {
-    const user = await this.usersRepository
-      .createQueryBuilder('user')
-      .addSelect('user.password')
-      .where('user.id = :id', { id: userId })
-      .getOne();
+  // async validateUserPassword(userId: string, password: string) {
+  //   const user = await this.usersRepository
+  //     .createQueryBuilder('user')
+  //     .addSelect('user.password')
+  //     .where('user.id = :id', { id: userId })
+  //     .getOne();
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+  //   if (!user) {
+  //     throw new NotFoundException('User not found');
+  //   }
 
-    if (!user.password) {
-      throw new BadRequestException(
-        'User logged in via OAuth2, no password set',
-      );
-    }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
-    }
-    return user;
-  }
+  //   if (!user.password) {
+  //     throw new BadRequestException(
+  //       'User logged in via OAuth2, no password set',
+  //     );
+  //   }
+  //   const isPasswordValid = await bcrypt.compare(password, user.password);
+  //   if (!isPasswordValid) {
+  //     throw new UnauthorizedException('Invalid password');
+  //   }
+  //   return user;
+  // }
 }
