@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PostgreSQLModule } from './databases/postgresql.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
     imports: [
@@ -16,7 +17,8 @@ import { RolesModule } from './roles/roles.module';
         PostgreSQLModule,
         AuthModule,
         UsersModule,
-        RolesModule
+        RolesModule,
+        MailModule
     ],
     controllers: [AppController],
     providers: [AppService],
