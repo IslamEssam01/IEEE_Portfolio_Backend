@@ -86,7 +86,24 @@ export class AuthController {
 
   // Swagger Meassages Updated
   @ApiOperation(register_swagger.operation)
-  @ApiBody({ type: RegisterDTO })
+  @ApiBody({
+    type: RegisterDTO,
+    examples: {
+      default: {
+        summary: 'Register payload',
+        value: {
+          email: 'wagih123@gmail.com',
+          username: 'AhmedWaGiiH',
+          name: 'Ahmed Wagih',
+          faculty: 'Engineering',
+          university: 'Cairo University',
+          academic_year: 3,
+          password: 'StrongPassw0rd!',
+          confirmPassword: 'StrongPassw0rd!',
+        },
+      },
+    },
+  })
   @ApiOkResponse(register_swagger.responses.success)
   @ApiConflictErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
   @ApiConflictErrorResponse(ERROR_MESSAGES.USERNAME_ALREADY_TAKEN)
@@ -103,8 +120,13 @@ export class AuthController {
   @ApiOkResponse(logout_swagger.responses.success)
   @ResponseMessage(SUCCESS_MESSAGES.LOGGED_OUT)
   @Post('logout')
-  async logout(@Res({ passthrough: true }) response: Response) {
-    await this.auth_service.logout();
+  async logout(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refresh_token = request.cookies?.refresh_token;
+
+    await this.auth_service.logout(refresh_token);
 
     // Clear the refresh_token cookie
     response.clearCookie('refresh_token', {
