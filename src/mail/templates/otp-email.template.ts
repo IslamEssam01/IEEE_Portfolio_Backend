@@ -56,11 +56,11 @@ export function buildOtpEmailHtml(params: {
                             </div>
 
                             <p style="font-size: 14px; color: #d9534f; text-align: center; font-weight: bold; margin-bottom: 30px;">
-                                ⏰ This code will expire in 10 minutes.
+                                This code will expire in 10 minutes.
                             </p>
 
                             <p style="font-size: 16px; line-height: 24px; margin-bottom: 0; color: #51545E;">
-                                If you did not request this email, please ignore it or contact our support team.
+                                If you did not request this email, please ignore it.
                             </p>
                         </td>
                     </tr>

@@ -1,55 +1,25 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
-import Mailjet, {
-  Client,
-  SendEmailV3_1,
-  type LibraryResponse,
-} from 'node-mailjet';
 import { buildOtpEmailHtml } from './templates/otp-email.template';
 
 @Injectable()
 export class MailService {
-  private readonly mailjet: Client;
+  constructor(
+    private mailerService: MailerService,
+    private configService: ConfigService,
+  ) {}
 
-  constructor(private readonly configService: ConfigService) {
-    this.mailjet = Mailjet.apiConnect(
-      this.configService.getOrThrow<string>('MAILJET_API_KEY'),
-      this.configService.getOrThrow<string>('MAILJET_API_SECRET'),
-    );
-  }
-
-  async sendEmail(
-    to: string,
-    subject: string,
-    content: string,
-  ): Promise<SendEmailV3_1.Response> {
+  async sendEmail(to: string, subject: string, content: string){
     try {
-      const from = this.configService.get<string>('MAIL_FROM_ADDRESS');
-      const payload: SendEmailV3_1.Body = {
-        Messages: [
-          {
-            From: {
-              Email: from || 'onboarding@resend.dev',
-            },
-            To: [
-              {
-                Email: to,
-              },
-            ],
-            Subject: subject,
-            HTMLPart: content,
-          },
-        ],
-      };
-
-      const result: LibraryResponse<SendEmailV3_1.Response> = await this.mailjet
-        .post('send', { version: 'v3.1' })
-        .request(payload);
-
-      return result.body;
+      await this.mailerService.sendMail({
+        to,
+        subject,
+        html: content,
+      });
     } catch (error) {
-      console.error('Email Service Error:', error);
-      throw new InternalServerErrorException('Could not send email');
+      console.error('Error sending email:', error);
+      throw new ServiceUnavailableException('Could not send email');
     }
   }
 
