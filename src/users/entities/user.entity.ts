@@ -73,6 +73,9 @@ export class User {
   is_active: boolean;
 
   @Column({ nullable: true, unique: true })
+  github_id: string;
+
+  @Column({ nullable: true, unique: true })
   google_id: string;
 
   @Column({ nullable: true })

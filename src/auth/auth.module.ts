@@ -9,6 +9,7 @@ import { UsersModule } from 'src/users/users.module';
 import { RedisModule } from 'src/redis/redis.module';
 import { RolesModule } from 'src/roles/roles.module';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { MailModule } from 'src/mail/mail.module';
 @Module({
@@ -43,7 +44,7 @@ import { MailModule } from 'src/mail/mail.module';
     RolesModule,
     MailModule,
   ],
-  providers: [AuthService, GoogleStrategy, JwtStrategy],
+  providers: [AuthService, GoogleStrategy, GithubStrategy, JwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}
