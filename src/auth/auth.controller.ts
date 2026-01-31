@@ -1,4 +1,12 @@
-import { Body, Controller, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Patch,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { Request, Response } from 'express';
 import {
@@ -112,14 +120,16 @@ export class AuthController {
   }
 
   @ApiOperation(send_email_otp_swagger.operation)
-  @ApiBody({ type: GenerateOtpDTO })
   @ApiOkResponse(send_email_otp_swagger.responses.success)
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ResponseMessage(SUCCESS_MESSAGES.OTP_GENERATED)
   @Post('otp/email/send')
-  async sendEmailOtp(@Body() generate_otp_dto: GenerateOtpDTO) {
-    const result = await this.auth_service.generateEmailVerificationOtp(
-      generate_otp_dto.email,
+  async sendEmailOtp(@Req() req: Request & { user: User }) {
+    const result = await this.auth_service.sendEmailOtpForUser(
+      req.user.id,
     );
     return result;
   }
@@ -127,13 +137,19 @@ export class AuthController {
   @ApiOperation(verify_email_otp_swagger.operation)
   @ApiBody({ type: VerifyOtpDTO })
   @ApiOkResponse(verify_email_otp_swagger.responses.success)
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ApiBadRequestErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
   @ResponseMessage(SUCCESS_MESSAGES.EMAIL_VERIFIED)
   @Patch('otp/email/verify')
-  async verifyEmailOtp(@Body() verify_otp_dto: VerifyOtpDTO) {
-    const result = await this.auth_service.verifyEmailVerificationOtp(
-      verify_otp_dto.email,
+  async verifyEmailOtp(
+    @Body() verify_otp_dto: VerifyOtpDTO,
+    @Req() req: Request & { user: User },
+  ) {
+    const result = await this.auth_service.verifyEmailOtpForUser(
+      req.user.id,
       verify_otp_dto.otp,
     );
     return result;

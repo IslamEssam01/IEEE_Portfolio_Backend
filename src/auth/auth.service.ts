@@ -231,6 +231,10 @@ export class AuthService {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
+    if (purpose === AuthOtpPurpose.EmailVerification && user.verified_email) {
+      throw new BadRequestException(ERROR_MESSAGES.ACCOUNT_ALREADY_VERIFIED);
+    }
+
     const otp = this.generateNumericOtp(6);
 
     const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? 10);
@@ -295,28 +299,21 @@ export class AuthService {
     return { success: true };
   }
 
-  async generateEmailVerificationOtp(
-    email: string,
-  ): Promise<{ success: boolean }> {
-    return this.generateOtp(email, AuthOtpPurpose.EmailVerification);
+  async sendEmailOtpForUser(user_id: string): Promise<{ success: boolean }> {
+    const user = await this.user_repository.findById(user_id);
+    return this.generateOtp(user.email, AuthOtpPurpose.EmailVerification);
   }
 
-  async verifyEmailVerificationOtp(
-    email: string,
+  async verifyEmailOtpForUser(
+    user_id: string,
     otp: string,
   ): Promise<{ success: boolean }> {
-    return this.verifyOtp(email, otp, AuthOtpPurpose.EmailVerification);
+    const user = await this.user_repository.findById(user_id);
+    return this.verifyOtp(user.email, otp, AuthOtpPurpose.EmailVerification);
   }
 
   async generatePasswordResetOtp(email: string): Promise<{ success: boolean }> {
     return this.generateOtp(email, AuthOtpPurpose.PasswordReset);
-  }
-
-  async verifyPasswordResetOtp(
-    email: string,
-    otp: string,
-  ): Promise<{ success: boolean }> {
-    return this.verifyOtp(email, otp, AuthOtpPurpose.PasswordReset);
   }
 
   async resetPasswordWithOtp(
