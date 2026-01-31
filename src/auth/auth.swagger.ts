@@ -226,3 +226,64 @@ export const change_password_swagger = {
     },
   },
 };
+
+export const refresh_token_swagger = {
+  operation: {
+    summary: 'Refresh access token',
+    description:
+      'Issue a new access token using the refresh token cookie (credentials required).',
+  },
+  responses: {
+    success: {
+      description: 'New access token generated',
+      schema: {
+        example: {
+          data: {
+            access_token:
+              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQxMDJkYWRjLTBiMTctNGU4My04MTJiLTAwMTAzYjYwNmExZiIsImlhdCI6MTc1ODE0Nzg2OSwiZXhwIjoxNzU4MTUxNDY5fQ.DV3oA5Fn-cj-KHrGcafGaoWGyvYFx4N50L9Ke4_n6OU',
+          },
+          count: 1,
+          message: SUCCESS_MESSAGES.NEW_ACCESS_TOKEN,
+        },
+      },
+      headers: {
+        'Set-Cookie': {
+          description: 'Requires refresh_token HttpOnly cookie',
+          schema: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  },
+};
+
+export const google_oauth_swagger = {
+  operation: {
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects user to Google OAuth consent screen.',
+  },
+};
+
+export const google_oauth_callback_swagger = {
+  operation: {
+    summary: 'Google OAuth callback',
+    description:
+      'Handles Google OAuth callback. Sets refresh token cookie and redirects without tokens in URL.',
+  },
+};
+
+export const github_oauth_swagger = {
+  operation: {
+    summary: 'Initiate GitHub OAuth login',
+    description: 'Redirects user to GitHub OAuth consent screen.',
+  },
+};
+
+export const github_oauth_callback_swagger = {
+  operation: {
+    summary: 'GitHub OAuth callback',
+    description:
+      'Handles GitHub OAuth callback. Sets refresh token cookie and redirects without tokens in URL.',
+  },
+};

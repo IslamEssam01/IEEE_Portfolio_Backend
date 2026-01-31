@@ -1,22 +1,38 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { UsersRepository } from 'src/users/users.repository';
+import { ERROR_MESSAGES } from 'src/constants/swagger-messages';
+
+type JwtPayload = {
+  id: string;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly usersRepository: UsersRepository,
+  ) {
+    const secret = configService.get<string>('JWT_TOKEN_SECRET');
+    if (!secret) {
+      throw new Error('JWT_TOKEN_SECRET is not set');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_TOKEN_SECRET || 'fallback-secret',
+      secretOrKey: secret,
     });
   }
 
-  async validate(payload: any) {
-    return {
-      id: payload.id,
-      email: payload.email,
-      username: payload.username,
-    };
+  async validate(payload: JwtPayload) {
+    if (!payload?.id) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    const user = await this.usersRepository.findById(payload.id);
+    return user;
   }
 }

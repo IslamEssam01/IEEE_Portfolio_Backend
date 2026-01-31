@@ -10,15 +10,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const callbackURL = process.env.GOOGLE_OAUTH_CALLBACK_URL;
 
     if (!clientID || !clientSecret || !callbackURL) {
-      // Create a dummy strategy to prevent instantiation errors
-      // The strategy won't be used if credentials are missing
-      super({
-        clientID: 'dummy',
-        clientSecret: 'dummy',
-        callbackURL: 'http://localhost:3001/auth/google/callback',
-        scope: ['email', 'profile'],
-      });
-      return;
+      throw new Error(
+        'Missing Google OAuth credentials. Set GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, and GOOGLE_OAUTH_CALLBACK_URL.',
+      );
     }
 
     super({
