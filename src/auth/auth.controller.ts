@@ -3,9 +3,11 @@ import {
   Controller,
   Patch,
   Post,
+  Get,
   Req,
   Res,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { Request, Response } from 'express';
@@ -43,7 +45,6 @@ import { CompleteOAuthProfileDto } from './dto/complete-oauth-profile.dto';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
 import { GoogleGuard } from './guards/google.guard';
 import { JwtGuard } from './guards/jwt.guard';
-import { register } from 'module';
 import { ResetPasswordDTO } from './dto/reset-password.dto';
 import { ChangePasswordDTO } from './dto/change-password.dto';
 import { AuthGuard } from '@nestjs/passport';
