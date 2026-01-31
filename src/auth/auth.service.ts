@@ -5,6 +5,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { LoginDTO, RegisterDTO } from './dto';
+import { GoogleOAuthDto } from './dto/google-oauth.dto';
+import { CompleteOAuthProfileDto } from './dto/complete-oauth-profile.dto';
 import { ERROR_MESSAGES } from 'src/constants/swagger-messages';
 import * as bcrypt from 'bcrypt';
 import { StringValue } from 'ms';
@@ -259,5 +261,94 @@ export class AuthService {
     await this.user_repository.update(user.id, { verified_email: true });
 
     return { success: true };
+  }
+
+  async validateGoogleOAuth(googleOAuthDto: GoogleOAuthDto) {
+    const { google_id, email, name, picture } = googleOAuthDto;
+
+    // Check if user with this google_id exists
+    let user = await this.user_repository.findByEmail(email);
+
+    if (user && user.google_id === google_id) {
+      // User exists with same google_id, return user with tokens
+      const { access_token, refresh_token } = await this.generateTokens(
+        user.id,
+      );
+      return {
+        user,
+        access_token,
+        refresh_token,
+        needsProfileCompletion: false,
+      };
+    }
+
+    // Check if email exists with different provider
+    if (user) {
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+    }
+
+    // Create new user with Google OAuth info
+    const visitorRole = await this.roles_service.findByName(RoleName.VISITOR);
+
+    const newUser = await this.user_repository.create({
+      email,
+      name,
+      google_id,
+      oauth_provider: 'google',
+      avatar_url: picture || undefined,
+      role_id: visitorRole.id,
+      verified_email: true, // Google emails are already verified
+      // Set defaults for required fields that will be completed later
+      username: `user_${google_id.substring(0, 8)}`, // Generate a temporary username
+      faculty: '', // Will be completed in profile completion step
+      university: '', // Will be completed in profile completion step
+      academic_year: 1, // Default value, will be updated later
+    });
+
+    // Generate tokens for new user but mark that profile completion is needed
+    const { access_token, refresh_token } = await this.generateTokens(
+      newUser.id,
+    );
+
+    return {
+      user: newUser,
+      access_token,
+      refresh_token,
+      needsProfileCompletion: true,
+    };
+  }
+
+  async completeOAuthProfile(
+    userId: string,
+    completeProfileDto: CompleteOAuthProfileDto,
+  ): Promise<User> {
+    const user = await this.user_repository.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
+    // Check if username is provided and is unique
+    if (completeProfileDto.username) {
+      const usernameExists = await this.user_repository.findByUsername(
+        completeProfileDto.username,
+      );
+      if (usernameExists && usernameExists.id !== userId) {
+        throw new BadRequestException(ERROR_MESSAGES.USERNAME_ALREADY_TAKEN);
+      }
+    }
+
+    // Update user profile
+    const updatedUser = await this.user_repository.update(userId, {
+      faculty: completeProfileDto.faculty,
+      university: completeProfileDto.university,
+      academic_year: completeProfileDto.academic_year,
+      ...(completeProfileDto.username && {
+        username: completeProfileDto.username,
+      }),
+      ...(completeProfileDto.major && { major: completeProfileDto.major }),
+    });
+
+    return updatedUser;
   }
 }
