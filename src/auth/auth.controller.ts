@@ -39,9 +39,13 @@ import {
   change_password_swagger,
 } from './auth.swagger';
 import { LoginDTO, RegisterDTO, GenerateOtpDTO, VerifyOtpDTO } from './dto';
+import { CompleteOAuthProfileDto } from './dto/complete-oauth-profile.dto';
+import { ResponseMessage } from 'src/decorators/response-message.decorator';
+import { GoogleGuard } from './guards/google.guard';
+import { JwtGuard } from './guards/jwt.guard';
+import { register } from 'module';
 import { ResetPasswordDTO } from './dto/reset-password.dto';
 import { ChangePasswordDTO } from './dto/change-password.dto';
-import { ResponseMessage } from 'src/decorators/response-message.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from 'src/users/entities/user.entity';
 
@@ -214,5 +218,73 @@ export class AuthController {
       password,
       confirmPassword,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects user to Google OAuth consent screen',
+  })
+  @UseGuards(GoogleGuard)
+  @Get('google')
+  async googleAuth() {
+    // This route is handled by GoogleGuard which redirects to Google
+  }
+
+  @ApiOperation({
+    summary: 'Google OAuth callback',
+    description: 'Handles the callback from Google after user authentication',
+  })
+  @UseGuards(GoogleGuard)
+  @Get('google/callback')
+  async googleAuthCallback(
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const user = request.user as any;
+
+    const {
+      access_token,
+      refresh_token,
+      needsProfileCompletion,
+    } = await this.auth_service.validateGoogleOAuth({
+      google_id: user.google_id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+    });
+
+    this.httpOnlyRefreshToken(response, refresh_token);
+
+    // Redirect to frontend with tokens
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const redirectUrl = `${frontendUrl}/auth/callback?access_token=${access_token}&refresh_token=${refresh_token}&needs_profile_completion=${needsProfileCompletion}`;
+
+    response.redirect(redirectUrl);
+  }
+
+  @ApiOperation({
+    summary: 'Complete OAuth user profile',
+    description: 'Complete missing profile information after Google OAuth login',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtGuard)
+  @Post('oauth/complete-profile')
+  @ResponseMessage(SUCCESS_MESSAGES.PROFILE_UPDATED)
+  async completeOAuthProfile(
+    @Req() request: Request,
+    @Body() completeProfileDto: CompleteOAuthProfileDto,
+  ) {
+    const userId = (request.user as any)?.id;
+
+    if (!userId) {
+      throw new BadRequestException('User not authenticated');
+    }
+
+    const user = await this.auth_service.completeOAuthProfile(
+      userId,
+      completeProfileDto,
+    );
+
+    return { user };
   }
 }

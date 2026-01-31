@@ -71,4 +71,10 @@ export class User {
 
   @Column({ default: true })
   is_active: boolean;
+
+  @Column({ nullable: true, unique: true })
+  google_id: string;
+
+  @Column({ nullable: true })
+  oauth_provider: string;
 }
