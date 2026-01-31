@@ -31,6 +31,8 @@ export class AuthService {
     process.env.REDIS_EMAIL_OTP_PREFIX ?? RedisKeyPrefix.EmailVerificationOtp;
   private readonly REDIS_PASSWORD_OTP_PREFIX =
     process.env.REDIS_PASSWORD_OTP_PREFIX ?? RedisKeyPrefix.PasswordResetOtp;
+  private readonly REDIS_REFRESH_TOKEN_SET_PREFIX =
+    process.env.REDIS_REFRESH_TOKEN_SET_PREFIX ?? 'refresh_token_set';
   private readonly REFRESH_TOKEN_TTL = Number(
     process.env.REDIS_REFRESH_TOKEN_TTL_SECONDS ?? 7 * 24 * 60 * 60,
   );
@@ -61,6 +63,18 @@ export class AuthService {
       : this.REDIS_EMAIL_OTP_PREFIX;
   }
 
+  private getRefreshTokenSetKey(user_id: string): string {
+    return `${this.REDIS_REFRESH_TOKEN_SET_PREFIX}:${user_id}`;
+  }
+
+  private async revokeAllRefreshTokens(user_id: string): Promise<void> {
+    const setKey = this.getRefreshTokenSetKey(user_id);
+    const keys = await this.redisService.smembers(setKey);
+
+    await this.redisService.deleteKeys(keys);
+    await this.redisService.del(setKey);
+  }
+
   async generateTokens(user_id: string) {
     const access_token = this.jwt_service.sign(
       { id: user_id },
@@ -80,10 +94,15 @@ export class AuthService {
     });
 
     // Store refresh token in Redis with configured TTL
+    const refreshKey = `${this.REDIS_REFRESH_TOKEN_PREFIX}:${user_id}:${jti}`;
     await this.redisService.setex(
-      `${this.REDIS_REFRESH_TOKEN_PREFIX}:${user_id}:${jti}`,
+      refreshKey,
       this.REFRESH_TOKEN_TTL,
       refresh_token,
+    );
+    await this.redisService.sadd(
+      this.getRefreshTokenSetKey(user_id),
+      refreshKey,
     );
 
     return {
@@ -214,8 +233,11 @@ export class AuthService {
     }
 
     if (payload?.id && payload?.jti) {
-      await this.redisService.del(
-        `${this.REDIS_REFRESH_TOKEN_PREFIX}:${payload.id}:${payload.jti}`,
+      const refreshKey = `${this.REDIS_REFRESH_TOKEN_PREFIX}:${payload.id}:${payload.jti}`;
+      await this.redisService.del(refreshKey);
+      await this.redisService.srem(
+        this.getRefreshTokenSetKey(payload.id),
+        refreshKey,
       );
     }
 
@@ -347,6 +369,8 @@ export class AuthService {
 
     await this.user_repository.update(user.id, { password: passwordHash });
 
+    await this.revokeAllRefreshTokens(user.id);
+
     return { success: true };
   }
 
@@ -388,6 +412,8 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     await this.user_repository.update(user.id, { password: passwordHash });
+
+    await this.revokeAllRefreshTokens(user.id);
 
     return { success: true };
   }
