@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { LoginDTO, RegisterDTO } from './dto';
 import { GoogleOAuthDto } from './dto/google-oauth.dto';
+import { GithubOAuthDto } from './dto/github-oauth.dto';
 import { CompleteOAuthProfileDto } from './dto/complete-oauth-profile.dto';
 import { ERROR_MESSAGES } from 'src/constants/swagger-messages';
 import * as bcrypt from 'bcrypt';
@@ -246,6 +247,37 @@ export class AuthService {
     return { success: true };
   }
 
+  async refreshAccessToken(refresh_token: string) {
+    let payload: { id?: string; jti?: string } | null = null;
+    try {
+      payload = this.jwt_service.verify(refresh_token, {
+        secret: process.env.JWT_REFRESH_SECRET ?? 'fallback-refresh-secret',
+      });
+    } catch {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    if (!payload?.id || !payload?.jti) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    const refreshKey = `${this.REDIS_REFRESH_TOKEN_PREFIX}:${payload.id}:${payload.jti}`;
+    const storedToken = await this.redisService.get(refreshKey);
+    if (!storedToken || storedToken !== refresh_token) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    const access_token = this.jwt_service.sign(
+      { id: payload.id },
+      {
+        secret: process.env.JWT_TOKEN_SECRET ?? 'fallback-secret',
+        expiresIn: (process.env.JWT_TOKEN_EXPIRATION_TIME ?? '1h') as StringValue,
+      },
+    );
+
+    return { access_token };
+  }
+
   private async generateOtp(
     email: string,
     purpose: AuthOtpPurpose,
@@ -421,7 +453,7 @@ export class AuthService {
   }
 
   async validateGoogleOAuth(googleOAuthDto: GoogleOAuthDto) {
-    const { google_id, email, name, picture } = googleOAuthDto;
+    const { google_id, email, name, avatar_url } = googleOAuthDto;
 
     // Check if user with this google_id exists
     let user = await this.user_repository.findByEmail(email);
@@ -452,7 +484,7 @@ export class AuthService {
       name,
       google_id,
       oauth_provider: 'google',
-      avatar_url: picture || undefined,
+      avatar_url: avatar_url || undefined,
       role_id: visitorRole.id,
       verified_email: true, // Google emails are already verified
       // Set defaults for required fields that will be completed later
@@ -463,6 +495,63 @@ export class AuthService {
     });
 
     // Generate tokens for new user but mark that profile completion is needed
+    const { access_token, refresh_token } = await this.generateTokens(
+      newUser.id,
+    );
+
+    return {
+      user: newUser,
+      access_token,
+      refresh_token,
+      needsProfileCompletion: true,
+    };
+  }
+
+  async validateGithubOAuth(githubOAuthDto: GithubOAuthDto) {
+    const { github_id, email, name, avatar_url } = githubOAuthDto;
+
+    if (!email) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.EMAIL_NOT_PROVIDED_BY_OAUTH_GITHUB,
+      );
+    }
+
+    // Check if user with this github_id exists
+    let user = await this.user_repository.findByEmail(email);
+
+    if (user && user.github_id === github_id) {
+      const { access_token, refresh_token } = await this.generateTokens(
+        user.id,
+      );
+      return {
+        user,
+        access_token,
+        refresh_token,
+        needsProfileCompletion: false,
+      };
+    }
+
+    // Check if email exists with different provider
+    if (user) {
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+    }
+
+    const visitorRole = await this.roles_service.findByName(RoleName.VISITOR);
+
+    const newUser = await this.user_repository.create({
+      email,
+      name,
+      github_id,
+      oauth_provider: 'github',
+      avatar_url: avatar_url || undefined,
+      role_id: visitorRole.id,
+      verified_email: true,
+      username: `user_${github_id.substring(0, 8)}`,
+      faculty: '',
+      university: '',
+      academic_year: 1,
+    });
+
     const { access_token, refresh_token } = await this.generateTokens(
       newUser.id,
     );

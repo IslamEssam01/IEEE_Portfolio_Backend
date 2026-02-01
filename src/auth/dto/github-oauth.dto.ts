@@ -1,6 +1,6 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 
-export class GoogleOAuthDto {
+export class GithubOAuthDto {
   @IsEmail()
   email: string;
 
@@ -12,5 +12,5 @@ export class GoogleOAuthDto {
   avatar_url?: string;
 
   @IsString()
-  google_id: string;
+  github_id: string;
 }

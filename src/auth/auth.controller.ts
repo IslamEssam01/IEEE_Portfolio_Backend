@@ -3,9 +3,11 @@ import {
   Controller,
   Patch,
   Post,
+  Get,
   Req,
   Res,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { Request, Response } from 'express';
@@ -37,13 +39,18 @@ import {
   send_password_reset_otp_swagger,
   reset_password_swagger,
   change_password_swagger,
+  refresh_token_swagger,
+  google_oauth_swagger,
+  google_oauth_callback_swagger,
+  github_oauth_swagger,
+  github_oauth_callback_swagger,
 } from './auth.swagger';
 import { LoginDTO, RegisterDTO, GenerateOtpDTO, VerifyOtpDTO } from './dto';
 import { CompleteOAuthProfileDto } from './dto/complete-oauth-profile.dto';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
 import { GoogleGuard } from './guards/google.guard';
+import { GithubGuard } from './guards/github.guard';
 import { JwtGuard } from './guards/jwt.guard';
-import { register } from 'module';
 import { ResetPasswordDTO } from './dto/reset-password.dto';
 import { ChangePasswordDTO } from './dto/change-password.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -63,6 +70,20 @@ export class AuthController {
       sameSite: is_production ? 'strict' : 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+  }
+
+  private redirectWithTokens(
+    response: Response,
+    access_token: string,
+    refresh_token: string,
+    needsProfileCompletion: boolean,
+  ) {
+    this.httpOnlyRefreshToken(response, refresh_token);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const redirectUrl = `${frontendUrl}/auth/callback?needs_profile_completion=${needsProfileCompletion}`;
+
+    response.redirect(redirectUrl);
   }
 
   @ApiOperation(login_swagger.operation)
@@ -121,6 +142,24 @@ export class AuthController {
     });
 
     return result;
+  }
+
+  @ApiOperation(refresh_token_swagger.operation)
+  @ApiOkResponse(refresh_token_swagger.responses.success)
+  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ResponseMessage(SUCCESS_MESSAGES.NEW_ACCESS_TOKEN)
+  @Post('token/refresh')
+  async refreshAccessToken(@Req() request: Request) {
+    const refresh_token = request.cookies?.refresh_token;
+
+    if (!refresh_token) {
+      throw new BadRequestException(ERROR_MESSAGES.NO_REFRESH_TOKEN_PROVIDED);
+    }
+
+    const { access_token } =
+      await this.auth_service.refreshAccessToken(refresh_token);
+
+    return { access_token };
   }
 
   @ApiOperation(send_email_otp_swagger.operation)
@@ -220,20 +259,14 @@ export class AuthController {
     );
   }
 
-  @ApiOperation({
-    summary: 'Initiate Google OAuth login',
-    description: 'Redirects user to Google OAuth consent screen',
-  })
+  @ApiOperation(google_oauth_swagger.operation)
   @UseGuards(GoogleGuard)
   @Get('google')
   async googleAuth() {
     // This route is handled by GoogleGuard which redirects to Google
   }
 
-  @ApiOperation({
-    summary: 'Google OAuth callback',
-    description: 'Handles the callback from Google after user authentication',
-  })
+  @ApiOperation(google_oauth_callback_swagger.operation)
   @UseGuards(GoogleGuard)
   @Get('google/callback')
   async googleAuthCallback(
@@ -241,6 +274,12 @@ export class AuthController {
     @Res() response: Response,
   ) {
     const user = request.user as any;
+
+    if (!user?.google_id || !user?.email) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.EMAIL_NOT_PROVIDED_BY_OAUTH_GOOGLE,
+      );
+    }
 
     const {
       access_token,
@@ -250,16 +289,56 @@ export class AuthController {
       google_id: user.google_id,
       email: user.email,
       name: user.name,
-      picture: user.picture,
+      avatar_url: user.avatar_url,
     });
 
-    this.httpOnlyRefreshToken(response, refresh_token);
+    this.redirectWithTokens(
+      response,
+      access_token,
+      refresh_token,
+      needsProfileCompletion,
+    );
+  }
 
-    // Redirect to frontend with tokens
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const redirectUrl = `${frontendUrl}/auth/callback?access_token=${access_token}&refresh_token=${refresh_token}&needs_profile_completion=${needsProfileCompletion}`;
+  @ApiOperation(github_oauth_swagger.operation)
+  @UseGuards(GithubGuard)
+  @Get('github')
+  async githubAuth() {
+    // This route is handled by GithubGuard which redirects to GitHub
+  }
 
-    response.redirect(redirectUrl);
+  @ApiOperation(github_oauth_callback_swagger.operation)
+  @UseGuards(GithubGuard)
+  @Get('github/callback')
+  async githubAuthCallback(
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const user = request.user as any;
+
+    if (!user?.github_id || !user?.email) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.EMAIL_NOT_PROVIDED_BY_OAUTH_GITHUB,
+      );
+    }
+
+    const {
+      access_token,
+      refresh_token,
+      needsProfileCompletion,
+    } = await this.auth_service.validateGithubOAuth({
+      github_id: user.github_id,
+      email: user.email,
+      name: user.name,
+      avatar_url: user.avatar_url,
+    });
+
+    this.redirectWithTokens(
+      response,
+      access_token,
+      refresh_token,
+      needsProfileCompletion,
+    );
   }
 
   @ApiOperation({
