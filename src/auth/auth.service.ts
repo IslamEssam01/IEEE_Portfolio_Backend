@@ -273,7 +273,8 @@ export class AuthService {
       { id: payload.id },
       {
         secret: process.env.JWT_TOKEN_SECRET ?? 'fallback-secret',
-        expiresIn: (process.env.JWT_TOKEN_EXPIRATION_TIME ?? '1h') as StringValue,
+        expiresIn: (process.env.JWT_TOKEN_EXPIRATION_TIME ??
+          '1h') as StringValue,
       },
     );
 

@@ -86,9 +86,5 @@ export class RegisterDTO {
   @IsNotEmpty()
   @MinLength(8)
   @MaxLength(STRING_MAX_LENGTH)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message:
-      'Password must contain lowercase, uppercase, number, and special character',
-  })
   confirmPassword: string;
 }

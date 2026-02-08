@@ -287,3 +287,26 @@ export const github_oauth_callback_swagger = {
       'Handles GitHub OAuth callback. Sets refresh token cookie and redirects without tokens in URL.',
   },
 };
+
+export const me_swagger = {
+  operation: {
+    summary: 'Get current authenticated user',
+    description: 'Returns the currently authenticated user profile.',
+  },
+  responses: {
+    success: {
+      description: 'Current user retrieved successfully',
+      schema: {
+        example: {
+          data: {
+            user: {
+              ...user_example,
+            },
+          },
+          count: 1,
+          message: 'User profile retrieved successfully',
+        },
+      },
+    },
+  },
+};

@@ -100,6 +100,7 @@ export class UsersRepository {
       const savedUser = await this.userRepository.save(user);
       return await this.findById(savedUser.id);
     } catch (error) {
+      console.error('Error in create user:', error);
       throw new InternalServerErrorException(
         ERROR_MESSAGES.FAILED_TO_SAVE_IN_DB,
       );
