@@ -38,7 +38,7 @@ export class RegisterDTO {
   })
   @IsString()
   @IsNotEmpty()
-  @IsPhoneNumber('ZZ', { message: 'Phone number must be valid' })
+  @IsPhoneNumber(undefined, { message: 'Phone number must be valid' })
   phone: string;
 
   @ApiProperty({ description: 'Faculty', example: 'Engineering' })
@@ -86,9 +86,5 @@ export class RegisterDTO {
   @IsNotEmpty()
   @MinLength(8)
   @MaxLength(STRING_MAX_LENGTH)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message:
-      'Password must contain lowercase, uppercase, number, and special character',
-  })
   confirmPassword: string;
 }

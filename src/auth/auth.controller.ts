@@ -44,10 +44,16 @@ import {
   google_oauth_callback_swagger,
   github_oauth_swagger,
   github_oauth_callback_swagger,
+  me_swagger,
 } from './auth.swagger';
 import { LoginDTO, RegisterDTO, GenerateOtpDTO, VerifyOtpDTO } from './dto';
 import { CompleteOAuthProfileDto } from './dto/complete-oauth-profile.dto';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
+import {
+  GoogleOAuthUser,
+  GithubOAuthUser,
+  RequestWithCookies,
+} from './interfaces/oauth-user.interface';
 import { GoogleGuard } from './guards/google.guard';
 import { GithubGuard } from './guards/github.guard';
 import { JwtGuard } from './guards/jwt.guard';
@@ -105,6 +111,17 @@ export class AuthController {
     return { access_token, user };
   }
 
+  @ApiOperation(me_swagger.operation)
+  @ApiOkResponse(me_swagger.responses.success)
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
+  @ResponseMessage('User profile retrieved successfully')
+  @Get('me')
+  getMe(@Req() request: Request & { user: User }) {
+    return { user: request.user };
+  }
+
   @ApiOperation(register_swagger.operation)
   @ApiBody({ type: RegisterDTO })
   @ApiOkResponse(register_swagger.responses.success)
@@ -127,10 +144,11 @@ export class AuthController {
   @ResponseMessage(SUCCESS_MESSAGES.LOGGED_OUT)
   @Post('logout')
   async logout(
-    @Req() request: Request,
+    @Req() request: Request & RequestWithCookies,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const refresh_token = request.cookies?.refresh_token;
+    const cookies = request.cookies as { refresh_token?: string } | undefined;
+    const refresh_token: string | undefined = cookies?.refresh_token;
 
     const result = await this.auth_service.logout(refresh_token);
 
@@ -149,8 +167,9 @@ export class AuthController {
   @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
   @ResponseMessage(SUCCESS_MESSAGES.NEW_ACCESS_TOKEN)
   @Post('token/refresh')
-  async refreshAccessToken(@Req() request: Request) {
-    const refresh_token = request.cookies?.refresh_token;
+  async refreshAccessToken(@Req() request: Request & RequestWithCookies) {
+    const cookies = request.cookies as { refresh_token?: string } | undefined;
+    const refresh_token: string | undefined = cookies?.refresh_token;
 
     if (!refresh_token) {
       throw new BadRequestException(ERROR_MESSAGES.NO_REFRESH_TOKEN_PROVIDED);
@@ -270,10 +289,10 @@ export class AuthController {
   @UseGuards(GoogleGuard)
   @Get('google/callback')
   async googleAuthCallback(
-    @Req() request: Request,
+    @Req() request: Request & { user?: GoogleOAuthUser },
     @Res() response: Response,
   ) {
-    const user = request.user as any;
+    const user = request.user;
 
     if (!user?.google_id || !user?.email) {
       throw new BadRequestException(
@@ -281,16 +300,13 @@ export class AuthController {
       );
     }
 
-    const {
-      access_token,
-      refresh_token,
-      needsProfileCompletion,
-    } = await this.auth_service.validateGoogleOAuth({
-      google_id: user.google_id,
-      email: user.email,
-      name: user.name,
-      avatar_url: user.avatar_url,
-    });
+    const { access_token, refresh_token, needsProfileCompletion } =
+      await this.auth_service.validateGoogleOAuth({
+        google_id: user.google_id,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatar_url,
+      });
 
     this.redirectWithTokens(
       response,
@@ -311,10 +327,10 @@ export class AuthController {
   @UseGuards(GithubGuard)
   @Get('github/callback')
   async githubAuthCallback(
-    @Req() request: Request,
+    @Req() request: Request & { user?: GithubOAuthUser },
     @Res() response: Response,
   ) {
-    const user = request.user as any;
+    const user = request.user;
 
     if (!user?.github_id || !user?.email) {
       throw new BadRequestException(
@@ -322,16 +338,13 @@ export class AuthController {
       );
     }
 
-    const {
-      access_token,
-      refresh_token,
-      needsProfileCompletion,
-    } = await this.auth_service.validateGithubOAuth({
-      github_id: user.github_id,
-      email: user.email,
-      name: user.name,
-      avatar_url: user.avatar_url,
-    });
+    const { access_token, refresh_token, needsProfileCompletion } =
+      await this.auth_service.validateGithubOAuth({
+        github_id: user.github_id,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatar_url,
+      });
 
     this.redirectWithTokens(
       response,
@@ -343,17 +356,18 @@ export class AuthController {
 
   @ApiOperation({
     summary: 'Complete OAuth user profile',
-    description: 'Complete missing profile information after Google OAuth login',
+    description:
+      'Complete missing profile information after Google OAuth login',
   })
   @ApiBearerAuth()
   @UseGuards(JwtGuard)
   @Post('oauth/complete-profile')
   @ResponseMessage(SUCCESS_MESSAGES.PROFILE_UPDATED)
   async completeOAuthProfile(
-    @Req() request: Request,
+    @Req() request: Request & { user: User },
     @Body() completeProfileDto: CompleteOAuthProfileDto,
   ) {
-    const userId = (request.user as any)?.id;
+    const userId: string | undefined = request.user?.id;
 
     if (!userId) {
       throw new BadRequestException('User not authenticated');
