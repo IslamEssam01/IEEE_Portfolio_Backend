@@ -2,7 +2,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import cookieParser from 'cookie-parser';
+import * as cookieParser from 'cookie-parser';
 import { ResponseInterceptor } from './interceptor/response.interceptor';
 
 async function bootstrap() {
@@ -19,7 +19,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       process.env.FRONTEND_URL || 'http://localhost:3001',
-      'http://localhost:5173'
+      'http://localhost:5173',
       'http://localhost:5174',
     ],
     credentials: true,
