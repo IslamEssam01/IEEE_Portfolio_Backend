@@ -41,6 +41,7 @@ import {
   delete_user_swagger,
 } from './users.swagger';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
+import { SkipPhoneNumberCheck } from 'src/decorators/skip-phone-number-check.decorator';
 import type { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from './entities/user.entity';
@@ -81,6 +82,7 @@ export class UsersController {
 
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
+  @SkipPhoneNumberCheck()
   @ApiBearerAuth()
   @ApiOperation(update_user_swagger.operation)
   @ApiOkResponse(update_user_swagger.responses.success)
