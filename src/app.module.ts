@@ -9,6 +9,8 @@ import { RolesModule } from './roles/roles.module';
 import { MailModule } from './mail/mail.module';
 import { RedisModule } from './redis/redis.module';
 import { EventsModule } from './events/events.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { PhoneNumberInterceptor } from './interceptor/phone-number.interceptor';
 
 @Module({
   imports: [
@@ -25,6 +27,12 @@ import { EventsModule } from './events/events.module';
     EventsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PhoneNumberInterceptor,
+    },
+  ],
 })
 export class AppModule {}

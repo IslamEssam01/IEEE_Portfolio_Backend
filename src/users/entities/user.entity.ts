@@ -45,7 +45,7 @@ export class User {
   @Column({ type: 'text', nullable: true })
   bio: string;
 
-  @Column()
+  @Column({ nullable: true })
   phone: string;
 
   @Column()
