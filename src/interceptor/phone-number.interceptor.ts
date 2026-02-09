@@ -10,6 +10,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { UsersRepository } from 'src/users/users.repository';
 import { SKIP_PHONE_NUMBER_CHECK } from 'src/decorators/skip-phone-number-check.decorator';
+import { ERROR_MESSAGES } from 'src/constants/swagger-messages';
 
 @Injectable()
 export class PhoneNumberInterceptor implements NestInterceptor {
@@ -46,9 +47,7 @@ export class PhoneNumberInterceptor implements NestInterceptor {
 
         // Check if phone number exists
         if (!fetchedUser.phone || fetchedUser.phone.trim() === '') {
-          throw new BadRequestException(
-            'Phone number is required. Please update your profile with a valid phone number.',
-          );
+          throw new BadRequestException(ERROR_MESSAGES.PHONE_NUMBER_REQUIRED);
         }
 
         // Attach the fetched user to the request for further use

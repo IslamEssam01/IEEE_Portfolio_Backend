@@ -1,11 +1,9 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
-  Delete,
   UseInterceptors,
   ClassSerializerInterceptor,
   ParseUUIDPipe,
@@ -52,18 +50,6 @@ import { User } from './entities/user.entity';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // @Post()
-  // @ApiOperation(create_user_swagger.operation)
-  // @ApiCreatedResponse(create_user_swagger.responses.success)
-  // @ApiBadRequestErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
-  // @ApiConflictErrorResponse(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
-  // @ApiNotFoundErrorResponse(ERROR_MESSAGES.ROLE_NOT_FOUND)
-  // @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
-  // @ResponseMessage(SUCCESS_MESSAGES.USER_REGISTERED)
-  // async create(@Body() createUserDto: CreateUserDto) {
-  //   return await this.usersService.create(createUserDto);
-  // }
-
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   @ApiBearerAuth()
@@ -97,22 +83,5 @@ export class UsersController {
     @Req() req: Request & { user: User },
   ) {
     return await this.usersService.update(id, updateUserDto, req.user);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Delete(':id')
-  @ApiBearerAuth()
-  @ApiOperation(delete_user_swagger.operation)
-  @ApiOkResponse(delete_user_swagger.responses.success)
-  @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
-  @ApiForbiddenErrorResponse(ERROR_MESSAGES.FORBIDDEN_ACTION)
-  @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
-  @ApiInternalServerError(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
-  @ResponseMessage(SUCCESS_MESSAGES.ACCOUNT_REMOVED)
-  remove(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request & { user: User },
-  ) {
-    return this.usersService.remove(id, req.user);
   }
 }
