@@ -62,6 +62,9 @@ export const ERROR_MESSAGES = {
 
   // server
   INTERNAL_SERVER_ERROR: 'Internal server error',
+
+  // request interception
+  PHONE_NUMBER_REQUIRED: 'Phone number is required. Please update your profile with a valid phone number.'
 } as const;
 
 // Success Messages

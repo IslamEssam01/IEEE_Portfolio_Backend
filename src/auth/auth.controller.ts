@@ -48,6 +48,7 @@ import {
 import { LoginDTO, RegisterDTO, GenerateOtpDTO, VerifyOtpDTO } from './dto';
 import { CompleteOAuthProfileDto } from './dto/complete-oauth-profile.dto';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
+import { SkipPhoneNumberCheck } from 'src/decorators/skip-phone-number-check.decorator';
 import { GoogleGuard } from './guards/google.guard';
 import { GithubGuard } from './guards/github.guard';
 import { JwtGuard } from './guards/jwt.guard';
@@ -125,6 +126,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
   @ResponseMessage(SUCCESS_MESSAGES.LOGGED_OUT)
+  @SkipPhoneNumberCheck()
   @Post('logout')
   async logout(
     @Req() request: Request,
@@ -169,6 +171,7 @@ export class AuthController {
   @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ResponseMessage(SUCCESS_MESSAGES.OTP_GENERATED)
+  @SkipPhoneNumberCheck()
   @Post('otp/email/send')
   async sendEmailOtp(@Req() req: Request & { user: User }) {
     const result = await this.auth_service.sendEmailOtpForUser(req.user.id);
@@ -184,6 +187,7 @@ export class AuthController {
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ApiBadRequestErrorResponse(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN)
   @ResponseMessage(SUCCESS_MESSAGES.EMAIL_VERIFIED)
+  @SkipPhoneNumberCheck()
   @Patch('otp/email/verify')
   async verifyEmailOtp(
     @Body() verify_otp_dto: VerifyOtpDTO,
@@ -243,6 +247,7 @@ export class AuthController {
   @ApiUnauthorizedErrorResponse(ERROR_MESSAGES.WRONG_PASSWORD)
   @ApiNotFoundErrorResponse(ERROR_MESSAGES.USER_NOT_FOUND)
   @ResponseMessage(SUCCESS_MESSAGES.PASSWORD_CHANGED)
+  @SkipPhoneNumberCheck()
   @Patch('password/change')
   async changePassword(
     @Body() change_password_dto: ChangePasswordDTO,
@@ -268,6 +273,7 @@ export class AuthController {
 
   @ApiOperation(google_oauth_callback_swagger.operation)
   @UseGuards(GoogleGuard)
+  @SkipPhoneNumberCheck()
   @Get('google/callback')
   async googleAuthCallback(
     @Req() request: Request,
@@ -309,6 +315,7 @@ export class AuthController {
 
   @ApiOperation(github_oauth_callback_swagger.operation)
   @UseGuards(GithubGuard)
+  @SkipPhoneNumberCheck()
   @Get('github/callback')
   async githubAuthCallback(
     @Req() request: Request,
@@ -347,6 +354,7 @@ export class AuthController {
   })
   @ApiBearerAuth()
   @UseGuards(JwtGuard)
+  @SkipPhoneNumberCheck()
   @Post('oauth/complete-profile')
   @ResponseMessage(SUCCESS_MESSAGES.PROFILE_UPDATED)
   async completeOAuthProfile(

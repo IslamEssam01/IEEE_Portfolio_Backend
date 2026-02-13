@@ -17,7 +17,11 @@ async function bootstrap() {
     );
     app.use(cookieParser());
     app.enableCors({
-        origin: [process.env.FRONTEND_URL || 'http://localhost:3001'],
+        origin: [
+            'http://localhost:5173',
+            'http://localhost:3001',
+            process.env.FRONTEND_URL || 'http://localhost:8000',
+        ],
         credentials: true,
     });
 
